@@ -1,7 +1,6 @@
 async function resolveRomUrl() {
   let res;
 
-  // 1) Load rom.json
   try {
     res = await fetch("./rom.json", { cache: "no-store" });
   } catch (err) {
@@ -38,7 +37,6 @@ async function resolveRomUrl() {
 
   const romPath = rom.startsWith("./") ? rom : `./${rom}`;
 
-  // 2) Verify the ROM actually exists
   const romCheck = await fetch(romPath, { method: "HEAD", cache: "no-store" });
   if (!romCheck.ok) {
     throw {
@@ -47,7 +45,7 @@ async function resolveRomUrl() {
     };
   }
 
-  return romPath;
+  return romPath + "?v=" + String(Date.now());
 }
 
 function showErrorOnPage(title, message) {
@@ -86,35 +84,7 @@ If the build failed, the ROM will not exist.`;
   document.body.prepend(box);
 }
 
-(async () => {
-  let romUrl;
-
-  try {
-    romUrl = await resolveRomUrl();
-  } catch (err) {
-    console.error("[Emulator startup failed]", err);
-
-    if (err.kind === "rom-json-missing" || err.kind === "rom-json-invalid") {
-      showErrorOnPage(
-        "Game could not be started",
-        "The emulator could not find rom.json, or it is invalid."
-      );
-    } else if (err.kind === "rom-missing") {
-      showErrorOnPage(
-        "Game could not be started",
-        "The ROM file listed in rom.json could not be found."
-      );
-    } else {
-      showErrorOnPage(
-        "Game could not be started",
-        "An unexpected error occurred while loading the game."
-      );
-    }
-
-    return;
-  }
-
-  // EmulatorJS config (GBA only)
+function configureAndLoadEmulator(romUrl) {
   window.EJS_player = "#game";
   window.EJS_core = "gba";
   window.EJS_gameUrl = romUrl;
@@ -124,8 +94,58 @@ If the build failed, the ROM will not exist.`;
   window.EJS_disableDatabases = true;
   window.EJS_DEBUG_XX = true;
 
-  // Load emulator runtime after config
   const s = document.createElement("script");
   s.src = "https://cdn.emulatorjs.org/latest/data/loader.js";
   document.head.appendChild(s);
-})();
+}
+
+async function startFromButton() {
+  const btn = document.getElementById("start");
+  if (btn) {
+    btn.disabled = true;
+    btn.textContent = "Loading…";
+  }
+
+  let romUrl;
+  try {
+    romUrl = await resolveRomUrl();
+  } catch (err) {
+    console.error("[Emulator startup failed]", err);
+
+    if (err.kind === "rom-json-missing" || err.kind === "rom-json-invalid") {
+      showErrorOnPage(
+        "Game could not be started",
+        "The emulator could not find rom.json, or it is invalid. Check the build logs for compilation errors."
+      );
+    } else if (err.kind === "rom-missing") {
+      showErrorOnPage(
+        "Game could not be started",
+        "The ROM file listed in rom.json could not be found. Check the build logs for compilation errors."
+      );
+    } else {
+      showErrorOnPage(
+        "Game could not be started",
+        "An unexpected error occurred while loading the game. Check the build logs for compilation errors."
+      );
+    }
+
+    if (btn) {
+      btn.disabled = false;
+      btn.textContent = "Start";
+    }
+    return;
+  }
+
+  // Remove the button (optional) and start emulator
+  btn?.remove();
+  configureAndLoadEmulator(romUrl);
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+  const btn = document.getElementById("start");
+  if (!btn) {
+    showErrorOnPage("Setup error", "Missing Start button with id=\"start\".");
+    return;
+  }
+  btn.addEventListener("click", startFromButton, { once: true });
+});
