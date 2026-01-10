@@ -40,6 +40,9 @@
 # debug information files
 *.dwo
 
+# Mac folder metadata
+.DS_Store
+
 # Butano build directory 
 build
 
