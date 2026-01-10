@@ -1,6 +1,7 @@
 {
     "name": "GBA Scenic Route Env",
     "image": "ghcr.io/auberonedu/gba-scenic:0.2.0",
+    // TODO: Move customizations to Dev Container Features
     "customizations": {
         "vscode": {
         "extensions": [
@@ -10,11 +11,12 @@
         "settings": {
             "C_Cpp.intelliSenseEngine": "default",
             "C_Cpp.default.compilerPath": "/opt/devkitpro/devkitARM/bin/arm-none-eabi-g++",
-            "C_Cpp.default.cppStandard": "c++20",
+            "C_Cpp.default.cppStandard": "c++23",
             "C_Cpp.default.includePath": [
             "${workspaceFolder}/include",
             "${workspaceFolder}/build",
             "/opt/butano/butano/include",
+            "/opt/butano/butano/hw/**/include",
             "/opt/butano/common/include"
             ],
             "C_Cpp.default.defines": [
